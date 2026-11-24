@@ -142,12 +142,3 @@ _The diagram is also available as an editable draw.io file: `docs/architecture.d
 - Run Command runs as root on the VM, so only the Ansible identity is allowed to use it and the commands are read-only.
 - Next steps: auto-expand the disk when it reaches 90% (Ansible playbook triggered by the alert),
   Teams notification, and running playbooks from CI so Git is the source of truth.
-
-## 7. How I tested
-- **Bicep:** `infra/main.bicep` and `infra/policy.bicep` compile with no errors or warnings (Bicep CLI 0.49).
-- **Azure Policy:** I checked the two built-in policy IDs, their parameter names (`dcrResourceId`, `resourceType`) and the roles each policy needs
-  against Microsoft's official `Azure/azure-policy` repository, and fixed the role assignments to match.
-- **Ansible:** all playbooks pass `ansible-playbook --syntax-check` and `ansible-lint` (production profile).
-- **Logic test:** `sh tests/run_tests.sh` runs all four playbooks against a fake `az` command with sample data.
-  It confirms the audit finds VMs without the agent, enrollment builds the right three commands per VM,
-  the report shows only disks above 80%, and the top-disks playbook prints the results.
