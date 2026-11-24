@@ -135,10 +135,3 @@ _The diagram is also available as an editable draw.io file: `docs/architecture.d
    ansible-playbook playbooks/03_top_disks.yml             # after ~10 minutes: see central data
    ```
 
-## 6. Limits and next steps
-- Written for **Linux VMs**. For Windows the design is the same; use a second DCR with `\LogicalDisk(*)\% Free Space`
-  and the Windows version of the policy and the agent.
-- Azure Policy only applies to supported OS images. Custom images may need the Ansible path.
-- Run Command runs as root on the VM, so only the Ansible identity is allowed to use it and the commands are read-only.
-- Next steps: auto-expand the disk when it reaches 90% (Ansible playbook triggered by the alert),
-  Teams notification, and running playbooks from CI so Git is the source of truth.
