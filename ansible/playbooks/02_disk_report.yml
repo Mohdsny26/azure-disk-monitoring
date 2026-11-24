@@ -1,0 +1,48 @@
+---
+# Step 2 (optional): quick disk check WITHOUT the agent.
+# Uses Azure "Run Command" (goes through Azure control plane, so no SSH and no open ports)
+# and prints only the disks above the warning threshold.
+# Good for a first baseline. For many VMs use the Log Analytics data (playbook 03) instead.
+- name: Quick df report on running Linux VMs
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../inventory/settings.yml
+  tasks:
+    - name: Find running Linux VMs (all subscriptions)
+      ansible.builtin.command:
+        argv: [az, graph, query, --first, "1000", --output, json, --graph-query, "{{ running_linux_vms_query }}"]
+      register: vms
+      changed_when: false
+
+    - name: Run df on each VM
+      ansible.builtin.command:
+        argv:
+          - az
+          - vm
+          - run-command
+          - invoke
+          - --ids
+          - "{{ item.id }}"
+          - --command-id
+          - RunShellScript
+          - --scripts
+          - "df -hP -x tmpfs -x devtmpfs | awk 'NR>1 && $5+0>={{ warning_threshold }}'"
+          - --query
+          - "value[0].message"
+          - --output
+          - tsv
+      loop: "{{ (vms.stdout | from_json).data }}"
+      loop_control:
+        label: "{{ item.name }}"
+      register: df_out
+      changed_when: false
+      failed_when: false
+
+    - name: Show disks above threshold
+      ansible.builtin.debug:
+        msg: "[{{ item.item.subscriptionId }}] {{ item.item.name }}: {{ item.stdout | regex_replace('\\[stdout\\]|\\[stderr\\]', '') | trim }}"
+      loop: "{{ df_out.results }}"
+      loop_control:
+        label: "{{ item.item.name }}"
+      when: (item.stdout | regex_replace('\\[stdout\\]|\\[stderr\\]', '') | trim | length) > 0

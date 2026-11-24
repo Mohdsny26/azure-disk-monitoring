@@ -1,0 +1,26 @@
+---
+# Step 0: log in with the managed identity (no password) and show what we can see.
+# Resource Graph looks across ALL subscriptions under the management group in one call,
+# so a new subscription shows up here without any change in Ansible.
+- name: Login and inventory of subscriptions / VMs
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../inventory/settings.yml
+  tasks:
+    - name: Login with the managed identity of the control node
+      ansible.builtin.command: az login --identity --output none
+      changed_when: false
+
+    - name: Count VMs per subscription (Azure Resource Graph)
+      ansible.builtin.command:
+        argv: [az, graph, query, --first, "1000", --output, json, --graph-query, "{{ vms_per_subscription_query }}"]
+      register: per_sub
+      changed_when: false
+
+    - name: Show result
+      ansible.builtin.debug:
+        msg: "Subscription {{ item.subscriptionId }} has {{ item.vms }} VM(s)"
+      loop: "{{ (per_sub.stdout | from_json).data }}"
+      loop_control:
+        label: "{{ item.subscriptionId }}"

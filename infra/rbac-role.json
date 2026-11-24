@@ -1,0 +1,21 @@
+{
+  "Name": "Disk Monitoring Operator",
+  "IsCustom": true,
+  "Description": "Used by the Ansible managed identity to find VMs, enroll them in disk monitoring and run a read-only df check.",
+  "Actions": [
+    "Microsoft.Resources/subscriptions/read",
+    "Microsoft.Resources/subscriptions/resourceGroups/read",
+    "Microsoft.ResourceGraph/resources/read",
+    "Microsoft.Compute/virtualMachines/read",
+    "Microsoft.Compute/virtualMachines/write",
+    "Microsoft.Compute/virtualMachines/extensions/read",
+    "Microsoft.Compute/virtualMachines/extensions/write",
+    "Microsoft.Compute/virtualMachines/runCommand/action",
+    "Microsoft.Insights/dataCollectionRules/read",
+    "Microsoft.Insights/dataCollectionRuleAssociations/*"
+  ],
+  "NotActions": [],
+  "AssignableScopes": [
+    "/providers/Microsoft.Management/managementGroups/__MG_ID__"
+  ]
+}

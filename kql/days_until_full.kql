@@ -1,0 +1,12 @@
+// Bonus: disks that will be full in less than 14 days (simple trend over last 7 days)
+Perf
+| where TimeGenerated > ago(7d)
+| where ObjectName == "Logical Disk" and CounterName == "% Used Space" and InstanceName != "_Total"
+| make-series used = avg(CounterValue) default = real(null) on TimeGenerated from ago(7d) to now() step 1h by Computer, InstanceName
+| extend used = series_fill_forward(used)
+| extend (rsq, slope, variance, rvariance, interception, line_fit) = series_fit_line(used)
+| extend current = todouble(used[-1])
+| extend DaysToFull = iff(slope > 0, round((100 - current) / (slope * 24), 1), real(null))
+| where isnotnull(DaysToFull) and DaysToFull < 14
+| project Computer, InstanceName, current, DaysToFull
+| order by DaysToFull asc

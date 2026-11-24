@@ -1,0 +1,7 @@
+// Top 20 fullest disks across ALL subscriptions (use as dashboard tile)
+Perf
+| where TimeGenerated > ago(30m)
+| where ObjectName == "Logical Disk" and CounterName == "% Used Space"
+| where InstanceName != "_Total"
+| summarize UsedPct = round(max(CounterValue), 1) by Computer, InstanceName
+| top 20 by UsedPct desc

@@ -1,0 +1,4 @@
+// VMs that stopped sending data (agent problem)
+Heartbeat
+| summarize LastSeen = max(TimeGenerated) by Computer, _ResourceId
+| where LastSeen < ago(20m)

@@ -1,0 +1,52 @@
+---
+# Step 3: read the central data. Shows the 20 fullest disks across all subscriptions.
+# This proves the full chain works: VM -> Azure Monitor Agent -> DCR -> Log Analytics.
+- name: Top fullest disks from Log Analytics
+  hosts: localhost
+  gather_facts: false
+  vars_files:
+    - ../inventory/settings.yml
+  tasks:
+    - name: Get workspace id
+      ansible.builtin.command:
+        argv:
+          - az
+          - monitor
+          - log-analytics
+          - workspace
+          - show
+          - --subscription
+          - "{{ central_subscription_id }}"
+          - -g
+          - "{{ central_resource_group }}"
+          - -n
+          - "{{ workspace_name }}"
+          - --query
+          - customerId
+          - -o
+          - tsv
+      register: ws
+      changed_when: false
+
+    - name: Run KQL query
+      ansible.builtin.command:
+        argv:
+          - az
+          - monitor
+          - log-analytics
+          - query
+          - -w
+          - "{{ ws.stdout | trim }}"
+          - --analytics-query
+          - "{{ top_disks_query }}"
+          - -o
+          - json
+      register: top
+      changed_when: false
+
+    - name: Show result
+      ansible.builtin.debug:
+        msg: "{{ item.Computer }}  {{ item.InstanceName }}  {{ item.UsedPct }}%"
+      loop: "{{ top.stdout | from_json }}"
+      loop_control:
+        label: "{{ item.Computer }}"

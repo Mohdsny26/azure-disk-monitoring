@@ -1,0 +1,43 @@
+---
+- name: "Enable system-assigned identity (needed by the agent) on {{ item.name }}"
+  ansible.builtin.command:
+    argv: [az, vm, identity, assign, --ids, "{{ item.id }}", --output, none]
+  changed_when: true
+
+- name: "Install Azure Monitor Agent on {{ item.name }}"
+  ansible.builtin.command:
+    argv:
+      - az
+      - vm
+      - extension
+      - set
+      - --ids
+      - "{{ item.id }}"
+      - --name
+      - AzureMonitorLinuxAgent
+      - --publisher
+      - Microsoft.Azure.Monitor
+      - --enable-auto-upgrade
+      - "true"
+      - --output
+      - none
+  changed_when: true
+
+- name: "Link the disk Data Collection Rule to {{ item.name }}"
+  ansible.builtin.command:
+    argv:
+      - az
+      - monitor
+      - data-collection
+      - rule
+      - association
+      - create
+      - --name
+      - dcra-disk-monitoring
+      - --rule-id
+      - "{{ dcr_id }}"
+      - --resource
+      - "{{ item.id }}"
+      - --output
+      - none
+  changed_when: true

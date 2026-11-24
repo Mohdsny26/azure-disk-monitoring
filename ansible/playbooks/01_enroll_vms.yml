@@ -1,0 +1,40 @@
+---
+# Step 1: find running Linux VMs that do NOT have Azure Monitor Agent, in all subscriptions.
+# Azure Policy does this automatically for new VMs. This playbook is the "safety net":
+#   - shows the gap (audit)  ->  ansible-playbook 01_enroll_vms.yml
+#   - fixes the gap          ->  ansible-playbook 01_enroll_vms.yml -e enroll=true
+- name: Audit and enroll VMs for disk monitoring
+  hosts: localhost
+  gather_facts: false
+  vars:
+    enroll: false
+  vars_files:
+    - ../inventory/settings.yml
+  tasks:
+    - name: Find Linux VMs without Azure Monitor Agent (all subscriptions)
+      ansible.builtin.command:
+        argv: [az, graph, query, --first, "1000", --output, json, --graph-query, "{{ missing_agent_query }}"]
+      register: missing
+      changed_when: false
+
+    - name: Keep the list
+      ansible.builtin.set_fact:
+        vms_missing: "{{ (missing.stdout | from_json).data }}"
+
+    - name: Show summary
+      ansible.builtin.debug:
+        msg: "{{ vms_missing | length }} running Linux VM(s) have no Azure Monitor Agent"
+
+    - name: List the VMs
+      ansible.builtin.debug:
+        msg: "{{ item.subscriptionId }} / {{ item.resourceGroup }} / {{ item.name }}"
+      loop: "{{ vms_missing }}"
+      loop_control:
+        label: "{{ item.name }}"
+
+    - name: Enroll the missing VMs
+      ansible.builtin.include_tasks: tasks/enroll_one.yml
+      loop: "{{ vms_missing }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: enroll | bool
