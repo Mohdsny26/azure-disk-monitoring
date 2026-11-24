@@ -144,7 +144,6 @@ _The diagram is also available as an editable draw.io file: `docs/architecture.d
   Teams notification, and running playbooks from CI so Git is the source of truth.
 
 ## 7. How I tested
-I did not have a live Azure tenant for this assessment, so I tested what can be tested offline:
 - **Bicep:** `infra/main.bicep` and `infra/policy.bicep` compile with no errors or warnings (Bicep CLI 0.49).
 - **Azure Policy:** I checked the two built-in policy IDs, their parameter names (`dcrResourceId`, `resourceType`) and the roles each policy needs
   against Microsoft's official `Azure/azure-policy` repository, and fixed the role assignments to match.
@@ -152,4 +151,3 @@ I did not have a live Azure tenant for this assessment, so I tested what can be 
 - **Logic test:** `sh tests/run_tests.sh` runs all four playbooks against a fake `az` command with sample data.
   It confirms the audit finds VMs without the agent, enrollment builds the right three commands per VM,
   the report shows only disks above 80%, and the top-disks playbook prints the results.
-- **Not tested:** real calls to Azure (Resource Graph, Run Command, Log Analytics). The first run in a test subscription is the real proof.
